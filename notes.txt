@@ -1,0 +1,663 @@
+The user has provided more context about the cube3d project. It's not just about rendering a simple cube, but a raycasting engine similar to Wolfenstein 3D. This significantly changes the approach.
+
+Here's a revised understanding of the project:
+
+Objective: Create a raycasting engine.
+Rendering Technique: Raycasting on a 2D map to simulate a 3D environment.
+Graphics Library: MiniLibX (MLX).
+Key Features:
+Wall collisions (in minimap and 3D).
+Minimap system.
+Open and close doors (bonus).
+Animated sprites (bonus).
+Rotate with mouse (bonus).
+Input: A .cub file containing the map and texture information.
+Map Format: Specific rules for the .cub file, including texture paths, floor/ceiling colors, map layout with walls ('1'), floors ('0'), player starting position ('N', 'S', 'E', 'W'), and allowed characters.
+Raycasting Algorithm: Detailed steps provided for calculating the distance to walls.
+Textures: Using XPM images for wall textures.
+Controls: WASD for movement, arrow keys for rotation, ESC or window close to exit.
+Given this new information, the previous approach of defining a 3D cube with vertices and edges is incorrect. The project involves casting rays from the player's position through the 2D map to determine what walls are visible and their distance.
+
+I need to adjust the project structure and the step-by-step guide to reflect this raycasting approach.
+
+Revised Project Structure (Based on Raycasting):
+
+cube3d/
+├── include/
+│   └── cube3d.h
+├── src/
+│   ├── main.c
+│   ├── parsing/
+│   │   └── map_parser.c
+│   ├── rendering/
+│   │   ├── raycasting.c
+│   │   ├── draw.c
+│   ├── input/
+│   │   └── input_handling.c
+│   ├── minimap/
+│   │   └── minimap.c
+│   ├── textures/
+│   │   └── texture_loader.c
+│   └── utils/
+│       ├── error_handling.c
+│       └── memory_management.c
+├── textures/      (Directory to store .xpm textures)
+├── Makefile
+├── README.md
+Revised Step-by-Step Guide (Focusing on Raycasting):
+
+Understand the Requirements (Revisited): Carefully review the provided articles to fully grasp the raycasting concept and the specific features required.
+Set Up Environment (Same as before).
+Create Project Structure (Revised as above).
+Header File (include/cube3d.h) (Update): Include necessary headers, define structs for player, map, ray, textures, colors, etc., and function prototypes.
+Map Parsing (src/parsing/map_parser.c): Implement functions to read and parse the .cub file. This includes:
+Reading texture paths (NO, SO, EA, WE).
+Reading floor and ceiling colors (F, C).
+Reading the map layout and validating its format (allowed characters, surrounded by walls, single player).
+Storing the parsed map in a suitable data structure (e.g., a 2D array or list of strings).
+Storing the player's starting position and orientation.
+Texture Loading (src/textures/texture_loader.c): Implement functions to load the .xpm texture files using MLX functions. Store the texture data in a way that can be easily accessed during rendering.
+Raycasting (src/rendering/raycasting.c): Implement the core raycasting algorithm as described in the article. This involves:
+Iterating through each vertical line of the screen (from left to right).
+Calculating the ray's direction based on the player's view angle and the current screen column.
+Casting the ray through the 2D map, taking small steps until a wall is hit.
+Calculating the distance to the hit wall.
+Applying the "fish-eye" correction.
+Determining the height of the wall to draw based on the distance.
+Identifying which texture and which part of the texture to use for the wall.
+Drawing (src/rendering/draw.c): Implement functions to draw vertical lines on the screen, representing the walls. Use the texture data to color these lines. Also, draw the floor and ceiling with the specified colors.
+Input Handling (src/input/input_handling.c): Implement functions to handle keyboard input for player movement (WASD) and rotation (arrow keys). Update the player's position and orientation accordingly. Implement wall collision detection to prevent the player from moving through walls.
+Minimap (src/minimap/minimap.c): Implement functions to draw a 2D representation of the map on the screen. Show the player's position and the surrounding walls. Implement wall collision detection in the minimap as well.
+Game Loop (main.c): Set up the MLX event loop. In each iteration, clear the screen, perform raycasting, draw the scene (walls, floor, ceiling, minimap), and handle input.
+Error Handling and Memory Management (src/utils/error_handling.c, src/utils/memory_management.c): Implement robust error handling for file parsing, texture loading, and MLX operations. Ensure proper memory management to avoid leaks.
+Makefile (Update): Ensure the Makefile compiles all the new source files.
+Testing and Debugging: Thoroughly test all features, including map parsing, rendering, movement, rotation, collisions, and the minimap.
+Bonus Features (Implement if required): Add functionality for doors, animated sprites, and mouse rotation.
+I will now provide a more detailed structure and some important code snippets based on this raycasting approach, keeping in mind the user is on Linux.
+
+You're using 2.0 Flash Thinking (experimental), it may not always work as expected.
+Okay, I understand now! The cube3d project is indeed about building a raycasting engine, much like the original Wolfenstein 3D. This is a significant shift from simply rendering a static cube.
+
+Let's refine the structure and provide some crucial code snippets for Linux, focusing on the raycasting approach.
+
+I. Updated Project Structure:
+
+cube3d/
+├── include/
+│   └── cube3d.h
+├── src/
+│   ├── main.c
+│   ├── parsing/
+│   │   └── map_parser.c
+│   ├── rendering/
+│   │   └── raycasting.c
+│   │   └── draw.c
+│   ├── input/
+│   │   └── input_handling.c
+│   ├── minimap/
+│   │   └── minimap.c
+│   ├── textures/
+│   │   └── texture_loader.c
+│   └── utils/
+│       ├── error_handling.c
+│       └── memory_management.c
+├── textures/      (You'll need to create this directory and put your .xpm files here)
+├── maps/          (Optional - for storing your .cub map files)
+├── Makefile
+├── README.md
+II. Step-by-Step Guide (Raycasting Focus):
+
+Understand the Requirements (Thoroughly): Review the provided articles and your project subject to ensure you understand all the mandatory features: map parsing, raycasting, wall rendering, wall collisions (in both 3D and minimap), minimap system, and the basic controls.
+
+Set Up Your Environment (Linux Specifics):
+
+Ensure you have gcc, make, and the necessary development libraries for X11. You might need to install packages like libx11-dev, libxext-dev, and zlib1g-dev.
+MiniLibX needs to be installed. On Debian/Ubuntu-based systems, you can usually install it with:
+Bash
+
+sudo apt-get update
+sudo apt-get install libbsd-dev libx11-dev zlib1g-dev
+On other distributions, the package names might be slightly different.
+Create the Project Structure: Create the directories and initial files as outlined above. Create textures/ and potentially maps/.
+
+Header File (include/cube3d.h): This will be crucial for sharing data structures and function prototypes across your project.
+
+C
+
+#ifndef CUBE3D_H
+#define CUBE3D_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <mlx.h>
+
+// --- Definitions ---
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 720
+#define TILE_SIZE 64
+#define MINIMAP_SCALE 0.2
+#define MINIMAP_TILE_SIZE (int)(TILE_SIZE * MINIMAP_SCALE)
+#define MINIMAP_PLAYER_SIZE 8
+
+// --- Enums ---
+typedef enum { NORTH, SOUTH, EAST, WEST } t_direction;
+
+// --- Structures ---
+typedef struct s_color {
+    int r;
+    int g;
+    int b;
+} t_color;
+
+typedef struct s_texture {
+    void *img_ptr;
+    int *data;
+    int width;
+    int height;
+    int bits_per_pixel;
+    int size_line;
+    int endian;
+} t_texture;
+
+typedef struct s_player {
+    double x;
+    double y;
+    double dir_x;
+    double dir_y;
+    double plane_x;
+    double plane_y;
+} t_player;
+
+typedef struct s_map {
+    char **grid;
+    int rows;
+    int cols;
+    char starting_direction;
+} t_map;
+
+typedef struct s_game {
+    void *mlx_ptr;
+    void *win_ptr;
+    t_player player;
+    t_map map;
+    t_texture textures[4]; // NO, SO, WE, EA
+    t_color floor_color;
+    t_color ceiling_color;
+} t_game;
+
+// --- Function Prototypes ---
+
+// parsing/map_parser.c
+int parse_map(t_game *game, const char *filepath);
+
+// textures/texture_loader.c
+int load_texture(t_game *game, t_texture *texture, const char *filepath);
+
+// rendering/raycasting.c
+void cast_rays(t_game *game);
+
+// rendering/draw.c
+void draw_vertical_line(t_game *game, int x, int height, int color);
+void draw_floor_ceiling(t_game *game);
+
+// input/input_handling.c
+int handle_keypress(int keycode, t_game *game);
+int handle_keyrelease(int keycode, t_game *game);
+void move_player(t_game *game, double move_x, double move_y);
+void rotate_player(t_game *game, double angle);
+int check_wall_collision(t_game *game, double new_x, double new_y);
+
+// minimap/minimap.c
+void draw_minimap(t_game *game);
+
+// utils/error_handling.c
+void ft_error(const char *msg);
+
+// utils/memory_management.c
+void free_game(t_game *game);
+
+#endif
+Map Parsing (src/parsing/map_parser.c): This is a critical part. You'll need to:
+
+Open and read the .cub file line by line.
+Parse the header information (textures, colors).
+Parse the map layout, storing it in a 2D array.
+Validate the map according to the rules (surrounded by walls, single player, etc.).
+Initialize the player's starting position and direction.
+C
+
+// Example snippet from src/parsing/map_parser.c (Illustrative - needs full implementation)
+#include "cube3d.h"
+
+int parse_map(t_game *game, const char *filepath) {
+    int fd = open(filepath, O_RDONLY);
+    if (fd == -1) {
+        ft_error("Error opening map file");
+        return 1;
+    }
+
+    // ... Logic to read the file and parse header and map ...
+
+    // Example of initializing player position based on map
+    for (int i = 0; i < game->map.rows; i++) {
+        for (int j = 0; j < game->map.cols; j++) {
+            if (game->map.grid[i][j] == 'N') {
+                game->player.x = j + 0.5;
+                game->player.y = i + 0.5;
+                game->player.dir_x = 0;
+                game->player.dir_y = -1; // North
+                game->player.plane_x = 0.66;
+                game->player.plane_y = 0;
+                game->map.grid[i][j] = '0'; // Replace starting position with floor
+            }
+            // ... Handle other starting directions (S, E, W) ...
+        }
+    }
+
+    if (game->player.dir_x == 0 && game->player.dir_y == 0) {
+        ft_error("No starting position found in map");
+        close(fd);
+        return 1;
+    }
+
+    close(fd);
+    return 0;
+}
+Texture Loading (src/textures/texture_loader.c): Load the .xpm files specified in the map.
+
+C
+
+#include "cube3d.h"
+
+int load_texture(t_game *game, t_texture *texture, const char *filepath) {
+    texture->img_ptr = mlx_xpm_file_to_image(game->mlx_ptr, (char *)filepath, &texture->width, &texture->height);
+    if (!texture->img_ptr) {
+        perror("Error loading texture");
+        return 1;
+    }
+    texture->data = (int *)mlx_get_data_addr(texture->img_ptr, &texture->bits_per_pixel, &texture->size_line, &texture->endian);
+    return 0;
+}
+Raycasting (src/rendering/raycasting.c): Implement the core raycasting algorithm. This will involve calculations for each ray to determine the distance to the nearest wall.
+
+C
+
+#include "cube3d.h"
+
+void cast_rays(t_game *game) {
+    for (int x = 0; x < WINDOW_WIDTH; x++) {
+        // Calculate ray direction
+        double camera_x = 2 * x / (double)WINDOW_WIDTH - 1; // Normalized screen coordinate (-1 to +1)
+        double ray_dir_x = game->player.dir_x + game->player.plane_x * camera_x;
+        double ray_dir_y = game->player.dir_y + game->player.plane_y * camera_x;
+
+        // Current position in map grid
+        int map_x = (int)game->player.x;
+        int map_y = (int)game->player.y;
+
+        // Length of ray from current position to next x or y-side
+        double side_dist_x;
+        double side_dist_y;
+
+        // Length of ray in one step of x or y-direction
+        double delta_dist_x = (ray_dir_x == 0) ? 1e30 : fabs(1 / ray_dir_x);
+        double delta_dist_y = (ray_dir_y == 0) ? 1e30 : fabs(1 / ray_dir_y);
+        double perp_wall_dist;
+
+        // Step direction and initial side distances
+        int step_x;
+        int step_y;
+        int side; // Was a NS or EW wall hit?
+
+        if (ray_dir_x < 0) {
+            step_x = -1;
+            side_dist_x = (game->player.x - map_x) * delta_dist_x;
+        } else {
+            step_x = 1;
+            side_dist_x = (map_x + 1.0 - game->player.x) * delta_dist_x;
+        }
+        if (ray_dir_y < 0) {
+            step_y = -1;
+            side_dist_y = (game->player.y - map_y) * delta_dist_y;
+        } else {
+            step_y = 1;
+            side_dist_y = (map_y + 1.0 - game->player.y) * delta_dist_y;
+        }
+
+        // Perform DDA (Digital Differential Analyzer)
+        int hit = 0;
+        while (hit == 0) {
+            // Jump to next map square, either in x- or y-direction
+            if (side_dist_x < side_dist_y) {
+                side_dist_x += delta_dist_x;
+                map_x += step_x;
+                side = 0;
+            } else {
+                side_dist_y += delta_dist_y;
+                map_y += step_y;
+                side = 1;
+            }
+
+            // Check if ray has hit a wall
+            if (map_y >= 0 && map_y < game->map.rows && map_x >= 0 && map_x < game->map.cols && game->map.grid[map_y][map_x] == '1') {
+                hit = 1;
+            }
+        }
+
+        // Calculate distance to the wall (Euclidean distance with fish-eye correction)
+        if (side == 0) {
+            perp_wall_dist = (side_dist_x - delta_dist_x);
+        } else {
+            perp_wall_dist = (side_dist_y - delta_dist_y);
+        }
+
+        // Calculate height of line to draw on screen
+        int line_height = (int)(WINDOW_HEIGHT / perp_wall_dist);
+
+        // Calculate lowest and highest pixel to fill current stripe
+        int draw_start = -line_height / 2 + WINDOW_HEIGHT / 2;
+        if (draw_start < 0) draw_start = 0;
+        int draw_end = line_height / 2 + WINDOW_HEIGHT / 2;
+        if (draw_end >= WINDOW_HEIGHT) draw_end = WINDOW_HEIGHT - 1;
+
+        // Determine which texture to use
+        int tex_num = 0; // Default texture index
+        if (side == 0 && ray_dir_x > 0) tex_num = 0;  // West
+        else if (side == 0 && ray_dir_x < 0) tex_num = 1; // East
+        else if (side == 1 && ray_dir_y > 0) tex_num = 2; // North
+        else if (side == 1 && ray_dir_y < 0) tex_num = 3; // South
+
+        // Calculate exact position of wall hit
+        double wall_x;
+        if (side == 0) wall_x = game->player.y + perp_wall_dist * ray_dir_y;
+        else           wall_x = game->player.x + perp_wall_dist * ray_dir_x;
+        wall_x -= floor(wall_x);
+
+        // x coordinate on the texture
+        int tex_x = (int)(wall_x * (double)game->textures[tex_num].width);
+        if(side == 0 && ray_dir_x > 0) tex_x = game->textures[tex_num].width - tex_x - 1;
+        if(side == 1 && ray_dir_y < 0) tex_x = game->textures[tex_num].width - tex_x - 1;
+
+        // Draw the vertical line with the texture
+        for (int y = draw_start; y < draw_end; y++) {
+            int tex_y = (((y - draw_start) * game->textures[tex_num].height) / line_height);
+            if(tex_y < 0) tex_y = 0;
+            if(tex_y >= game->textures[tex_num].height) tex_y = game->textures[tex_num].height - 1;
+            int color = game->textures[tex_num].data[game->textures[tex_num].width * tex_y + tex_x];
+            mlx_pixel_put(game->mlx_ptr, game->win_ptr, x, y, color);
+        }
+    }
+    draw_floor_ceiling(game);
+    draw_minimap(game); // Draw minimap after rendering the scene
+}
+Drawing (src/rendering/draw.c): Implement functions to draw vertical lines and the floor/ceiling.
+
+C
+
+#include "cube3d.h"
+
+void draw_vertical_line(t_game *game, int x, int height, int color) {
+    int start = (WINDOW_HEIGHT - height) / 2;
+    if (start < 0) start = 0;
+    int end = start + height;
+    if (end >= WINDOW_HEIGHT) end = WINDOW_HEIGHT;
+    for (int y = start; y < end; y++) {
+        mlx_pixel_put(game->mlx_ptr, game->win_ptr, x, y, color);
+    }
+}
+
+void draw_floor_ceiling(t_game *game) {
+    for (int y = 0; y < WINDOW_HEIGHT / 2; y++) {
+        for (int x = 0; x < WINDOW_WIDTH; x++) {
+            mlx_pixel_put(game->mlx_ptr, game->win_ptr, x, y, (game->ceiling_color.r << 16) | (game->ceiling_color.g << 8) | game->ceiling_color.b);
+        }
+    }
+    for (int y = WINDOW_HEIGHT / 2; y < WINDOW_HEIGHT; y++) {
+        for (int x = 0; x < WINDOW_WIDTH; x++) {
+            mlx_pixel_put(game->mlx_ptr, game->win_ptr, x, y, (game->floor_color.r << 16) | (game->floor_color.g << 8) | game->floor_color.b);
+        }
+    }
+}
+Input Handling (src/input/input_handling.c): Implement movement and rotation based on key presses. Handle wall collisions here.
+
+C
+
+#include "cube3d.h"
+
+#define MOVE_SPEED 0.1
+#define ROTATION_SPEED 0.05
+
+int check_wall_collision(t_game *game, double new_x, double new_y) {
+    int map_grid_x = (int)new_x;
+    int map_grid_y = (int)new_y;
+    if (map_grid_y >= 0 && map_grid_y < game->map.rows && map_grid_x >= 0 && map_grid_x < game->map.cols && game->map.grid[map_grid_y][map_grid_x] == '1') {
+        return 1; // Collision
+    }
+    return 0; // No collision
+}
+
+void move_player(t_game *game, double move_x, double move_y) {
+    double new_x = game->player.x + move_x;
+    double new_y = game->player.y + move_y;
+
+    if (!check_wall_collision(game, new_x, game->player.y)) {
+        game->player.x = new_x;
+    }
+    if (!check_wall_collision(game, game->player.x, new_y)) {
+        game->player.y = new_y;
+    }
+}
+
+void rotate_player(t_game *game, double angle) {
+    double old_dir_x = game->player.dir_x;
+    game->player.dir_x = game->player.dir_x * cos(angle) - game->player.dir_y * sin(angle);
+    game->player.dir_y = old_dir_x * sin(angle) + game->player.dir_y * cos(angle);
+    double old_plane_x = game->player.plane_x;
+    game->player.plane_x = game->player.plane_x * cos(angle) - game->player.plane_y * sin(angle);
+    game->player.plane_y = old_plane_x * sin(angle) + game->player.plane_y * cos(angle);
+}
+
+int handle_keypress(int keycode, t_game *game) {
+    if (keycode == 65307) // Escape
+        exit(0);
+    if (keycode == 119) // W
+        move_player(game, game->player.dir_x * MOVE_SPEED, game->player.dir_y * MOVE_SPEED);
+    if (keycode == 115) // S
+        move_player(game, -game->player.dir_x * MOVE_SPEED, -game->player.dir_y * MOVE_SPEED);
+    if (keycode == 97) // A
+        move_player(game, game->player.dir_y * MOVE_SPEED, -game->player.dir_x * MOVE_SPEED);
+    if (keycode == 100) // D
+        move_player(game, -game->player.dir_y * MOVE_SPEED, game->player.dir_x * MOVE_SPEED);
+    if (keycode == 65363) // Right arrow
+        rotate_player(game, -ROTATION_SPEED);
+    if (keycode == 65361) // Left arrow
+        rotate_player(game, ROTATION_SPEED);
+    return 0;
+}
+
+int handle_keyrelease(int keycode, t_game *game) {
+    return 0;
+}
+Minimap (src/minimap/minimap.c): Draw a simplified 2D view of the map.
+
+C
+
+#include "cube3d.h"
+
+void draw_minimap(t_game *game) {
+    int map_width = game->map.cols;
+    int map_height = game->map.rows;
+
+    for (int y = 0; y < map_height; y++) {
+        for (int x = 0; x < map_width; x++) {
+            int pixel_x = x * MINIMAP_TILE_SIZE;
+            int pixel_y = y * MINIMAP_TILE_SIZE;
+            int color = 0;
+
+            if (game->map.grid[y][x] == '1')
+                color = 0xFFFFFF; // White for walls
+            else if (game->map.grid[y][x] == '0')
+                color = 0x000000; // Black for floor
+
+            for (int i = 0; i < MINIMAP_TILE_SIZE; i++) {
+                for (int j = 0; j < MINIMAP_TILE_SIZE; j++) {
+                    if (pixel_x + i < WINDOW_WIDTH && pixel_y + j < WINDOW_HEIGHT)
+                        mlx_pixel_put(game->mlx_ptr, game->win_ptr, pixel_x + i, pixel_y + j, color);
+                }
+            }
+        }
+    }
+
+    // Draw player on minimap
+    int player_x_px = (int)(game->player.x * MINIMAP_TILE_SIZE);
+    int player_y_px = (int)(game->player.y * MINIMAP_TILE_SIZE);
+    int player_color = 0xFF0000; // Red for player
+
+    for (int i = -MINIMAP_PLAYER_SIZE / 2; i < MINIMAP_PLAYER_SIZE / 2; i++) {
+        for (int j = -MINIMAP_PLAYER_SIZE / 2; j < MINIMAP_PLAYER_SIZE / 2; j++) {
+            if (player_x_px + i >= 0 && player_x_px + i < WINDOW_WIDTH &&
+                player_y_px + j >= 0 && player_y_px + j < WINDOW_HEIGHT)
+                mlx_pixel_put(game->mlx_ptr, game->win_ptr, player_x_px + i, player_y_px + j, player_color);
+        }
+    }
+}
+Main Function (src/main.c): Initialize MLX, load resources, set up hooks, and start the game loop.
+
+C
+
+#include "cube3d.h"
+
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <map_file.cub>\n", argv[0]);
+        return 1;
+    }
+
+    t_game game;
+    game.mlx_ptr = mlx_init();
+    if (!game.mlx_ptr)
+        return 1;
+    game.win_ptr = mlx_new_window(game.mlx_ptr, WINDOW_WIDTH, WINDOW_HEIGHT, "Cube3D");
+    if (!game.win_ptr)
+        return 1;
+
+    // Initialize game state
+    ft_memset(&game, 0, sizeof(t_game));
+
+    // Parse the map
+    if (parse_map(&game, argv[1])) {
+        free_game(&game);
+        return 1;
+    }
+
+    // Load textures (replace with your actual texture paths)
+    if (load_texture(&game, &game.textures[0], "textures/wall_1.xpm") ||
+        load_texture(&game, &game.textures[1], "textures/wall_2.xpm") ||
+        load_texture(&game, &game.textures[2], "textures/wall_3.xpm") ||
+        load_texture(&game, &game.textures[3], "textures/wall.xpm")) {
+        free_game(&game);
+        return 1;
+    }
+
+    // Set floor and ceiling colors (example)
+    game.floor_color = (t_color){184, 113, 39};
+    game.ceiling_color = (t_color){51, 198, 227};
+
+    // Set up event hooks
+    mlx_hook(game.win_ptr, 2, 1L << 0, handle_keypress, &game);
+    mlx_hook(game.win_ptr, 3, 1L << 1, handle_keyrelease, &game);
+    mlx_hook(game.win_ptr, 17, 0, (void *)exit, 0); // Handle window close button
+
+    // Game loop function
+    mlx_loop_hook(game.mlx_ptr, (void (*)(void *))cast_rays, &game);
+
+    mlx_loop(game.mlx_ptr);
+
+    free_game(&game);
+    return 0;
+}
+Error Handling and Memory Management (src/utils/error_handling.c, src/utils/memory_management.c): Implement functions for error messages and freeing allocated memory.
+
+C
+
+// In src/utils/error_handling.c
+#include <stdio.h>
+#include <stdlib.h>
+
+void ft_error(const char *msg) {
+    perror(msg);
+    exit(EXIT_FAILURE);
+}
+
+// In src/utils/memory_management.c
+#include "cube3d.h"
+
+void free_game(t_game *game) {
+    if (!game)
+        return;
+    if (game->win_ptr)
+        mlx_destroy_window(game->mlx_ptr, game->win_ptr);
+    if (game->mlx_ptr) {
+        for (int i = 0; i < 4; i++) {
+            if (game->textures[i].img_ptr)
+                mlx_destroy_image(game->mlx_ptr, game->textures[i].img_ptr);
+        }
+        mlx_destroy_display(game->mlx_ptr);
+        free(game->mlx_ptr);
+    }
+    if (game->map.grid) {
+        for (int i = 0; i < game->map.rows; i++) {
+            free(game->map.grid[i]);
+        }
+        free(game->map.grid);
+    }
+}
+Makefile (Updated for Linux):
+
+Makefile
+
+NAME = cub3d
+CC = gcc
+CFLAGS = -Wall -Wextra -Werror -O2 -lm
+MLX_FLAGS = -lmlx -lX11 -lXext
+SRCS_DIR = src
+SRCS = $(wildcard $(SRCS_DIR)/**/*.c)
+OBJS = $(SRCS:src/%.c=%.o)
+
+all: $(NAME)
+
+$(NAME): $(OBJS)
+    $(CC) $(CFLAGS) $(OBJS) $(MLX_FLAGS) -o $(NAME)
+
+%.o: src/%.c include/cube3d.h
+    $(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+    rm -rf $(OBJS)
+
+fclean: clean
+    rm -rf $(NAME)
+
+re: fclean all
+Create textures/ and maps/ directories: Place your .xpm texture files in the textures/ directory and your .cub map files in the maps/ directory (or wherever you prefer).
+
+Compile and Run:
+
+Bash
+
+make
+./cub3d maps/your_map.cub  # Replace your_map.cub with your map file
+III. Important Considerations and Next Steps:
+
+Map Parsing: The parse_map function needs a robust implementation to handle all the rules specified in the articles. Pay close attention to error handling during parsing.
+Texture Paths: Ensure the texture paths in your .cub file are correct relative to where you place your .xpm files.
+Raycasting Algorithm: The provided cast_rays function is a starting point. You might need to adjust parameters like the field of view (FOV) and the player's initial direction based on your project requirements.
+Wall Collisions: The check_wall_collision function provides basic collision detection. You might need to refine it to handle edge cases and ensure smooth movement.
+Minimap: The draw_minimap function provides a basic overview. You might want to add the player's direction indicator.
+Bonus Features: Once the core raycasting engine is working, you can start implementing the bonus features like doors, animated sprites, and mouse rotation. These will involve extending the map format, the rendering logic, and the input handling.
+This detailed structure and the provided code snippets should give you a strong starting point for your cube3d project on Linux. Remember to break down the project into smaller, manageable tasks and test each part thoroughly as you go. Good luck!
